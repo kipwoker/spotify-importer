@@ -1,0 +1,131 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        target: [x86_64-unknown-linux-gnu, x86_64-apple-darwin, aarch64-apple-darwin, x86_64-pc-windows-gnu]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+
+      - name: Cache cargo
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo
+            target
+            Cargo.lock
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Create Release Directory
+        run: mkdir -p release
+
+      - name: Copy Binaries
+        run: |
+          cp target/${{ matrix.target }}/release/* release/
+
+      - name: Upload Release Asset
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.target }}-binaries
+          path: release
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Download Linux Binaries
+        uses: actions/download-artifact@v3
+        with:
+          name: x86_64-unknown-linux-gnu-binaries
+          path: ./release/x86_64-unknown-linux-gnu
+
+      - name: Download macOS Binaries
+        uses: actions/download-artifact@v3
+        with:
+          name: x86_64-apple-darwin-binaries
+          path: ./release/x86_64-apple-darwin
+
+      - name: Download macOS M1 Binaries
+        uses: actions/download-artifact@v3
+        with:
+          name: aarch64-apple-darwin-binaries
+          path: ./release/aarch64-apple-darwin
+
+      - name: Download Windows Binaries
+        uses: actions/download-artifact@v3
+        with:
+          name: x86_64-pc-windows-gnu-binaries
+          path: ./release/x86_64-pc-windows-gnu
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./release/x86_64-unknown-linux-gnu
+          asset_name: linux-binaries
+          asset_content_type: application/zip
+
+      - name: Upload Release Assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./release/x86_64-apple-darwin
+          asset_name: macos-binaries
+          asset_content_type: application/zip
+
+      - name: Upload Release Assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./release/aarch64-apple-darwin
+          asset_name: macos-m1-binaries
+          asset_content_type: application/zip
+
+      - name: Upload Release Assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./release/x86_64-pc-windows-gnu
+          asset_name: windows-binaries
+          asset_content_type: application/zip
