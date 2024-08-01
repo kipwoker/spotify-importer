@@ -148,42 +148,54 @@ jobs:
           draft: false
           prerelease: false
 
-      - name: Upload Release Assets
+      - name: Zip Linux Binaries
+        run: zip -j ./release/linux-binaries.zip ./release/x86_64-unknown-linux-gnu/*
+
+      - name: Upload Linux Binaries
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.PA_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./release/x86_64-unknown-linux-gnu
-          asset_name: linux-binaries
+          asset_path: ./release/linux-binaries.zip
+          asset_name: linux-binaries.zip
           asset_content_type: application/zip
 
-      - name: Upload Release Assets
+      - name: Zip macOS Binaries
+        run: zip -j ./release/macos-binaries.zip ./release/x86_64-apple-darwin/*
+
+      - name: Upload macOS Binaries
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.PA_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./release/x86_64-apple-darwin
-          asset_name: macos-binaries
+          asset_path: ./release/macos-binaries.zip
+          asset_name: macos-binaries.zip
           asset_content_type: application/zip
 
-      - name: Upload Release Assets
+      - name: Zip macOS M1 Binaries
+        run: zip -j ./release/macos-m1-binaries.zip ./release/aarch64-apple-darwin/*
+
+      - name: Upload macOS M1 Binaries
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.PA_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./release/aarch64-apple-darwin
-          asset_name: macos-m1-binaries
+          asset_path: ./release/macos-m1-binaries.zip
+          asset_name: macos-m1-binaries.zip
           asset_content_type: application/zip
 
-      - name: Upload Release Assets
+      - name: Zip Windows Binaries
+        run: zip -j ./release/windows-binaries.zip ./release/x86_64-pc-windows-gnu/*
+
+      - name: Upload Windows Binaries
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.PA_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./release/x86_64-pc-windows-gnu
-          asset_name: windows-binaries
+          asset_path: ./release/windows-binaries.zip
+          asset_name: windows-binaries.zip
           asset_content_type: application/zip
